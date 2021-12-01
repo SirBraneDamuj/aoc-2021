@@ -72,3 +72,4 @@ outTmp/
 /kotlin-native/dist
 kotlin-ide/
 input
+credentials.txt
