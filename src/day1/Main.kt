@@ -3,28 +3,24 @@ package com.zpthacker.aoc21.day1
 import com.zpthacker.aoc21.getInputLines
 
 fun main() {
-    val lines = getInputLines("day1")
-    val ints = lines.map(String::toInt)
-    var previousValue: Int = ints.first()
-    var increases = 0
-    ints.drop(1).forEach {
-        if (it > previousValue)
-            increases++
-        previousValue = it
-    }
-    println(increases)
-    println(windowed(ints))
+    val depths = getInputLines("day1").map(String::toInt)
+    val part1Solution = singleDepthIncreases(depths)
+    val part2Solution = windowedDepthIncreases(depths)
+    println("Part 1 Solution: $part1Solution")
+    println("Part 2 Solution: $part2Solution")
 }
 
-fun windowed(ints: List<Int>): Int {
-    val windows = ints.windowed(3)
-    var previousWindow = windows.first()
-    var increases = 0
-    windows.drop(1).forEach {
-        if (it.count() != 3) return@forEach
-        if (it.sum() > previousWindow.sum())
-            increases++
-        previousWindow = it
-    }
-    return increases
-}
+fun singleDepthIncreases(depths: List<Int>) =
+    depths
+        .windowed(2)
+        .count { (first, second) ->
+            second > first
+        }
+
+fun windowedDepthIncreases(depths: List<Int>) =
+    depths
+        .windowed(3)
+        .windowed(2)
+        .count { (firstWindow, secondWindow) ->
+            secondWindow.sum() > firstWindow.sum()
+        }
