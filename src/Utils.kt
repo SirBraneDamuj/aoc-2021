@@ -5,6 +5,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import kotlin.math.pow
 
 fun getInputLines(puzzleNumber: Int) =
     getInput(puzzleNumber)
@@ -46,3 +47,8 @@ private val client: HttpClient by lazy {
 private val credentials: String by lazy {
     File("credentials.txt").readText()
 }
+
+fun List<Int>.binaryToDecimal() =
+    this.reversed().foldIndexed(0) { i, acc, digit ->
+        acc + (digit * 2.0.pow(i.toDouble()).toInt())
+    }
