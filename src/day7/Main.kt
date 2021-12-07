@@ -21,13 +21,12 @@ fun main() {
 }
 
 fun linearFuelUsage(crabs: List<Int>, destination: Int) =
-    crabs.fold(0) { fuel, crab ->
-        fuel + abs(crab - destination)
+    crabs.sumOf { crab ->
+        abs(crab - destination)
     }
 
 fun rampingFuelUsage(crabs: List<Int>, destination: Int) =
-    crabs.fold(0) { fuel, crab ->
+    crabs.sumOf { crab ->
         val distance = abs(crab - destination)
-        val delta = (1..distance).sum()
-        fuel + delta
+        (distance * (distance + 1)) / 2
     }
