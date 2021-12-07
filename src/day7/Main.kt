@@ -9,12 +9,25 @@ fun main() {
     val minPosition = crabs.minOrNull()!!
     val maxPosition = crabs.maxOrNull()!!
 
-    val answer = (minPosition..maxPosition).minOf { position ->
-        crabs.fold(0) { fuel, crab ->
-            val distance = abs(crab - position)
-            var delta = (1..distance).sum()
-            fuel + delta
-        }
+    val part1Answer = (minPosition..maxPosition).minOf { positionCandidate ->
+        linearFuelUsage(crabs, positionCandidate)
     }
-    println(answer)
+    val part2Answer = (minPosition..maxPosition).minOf { positionCandidate ->
+        rampingFuelUsage(crabs, positionCandidate)
+    }
+    println("Day 7: The Treachery of Whales")
+    println("Part 1 Answer: $part1Answer")
+    println("Part 2 Answer: $part2Answer")
 }
+
+fun linearFuelUsage(crabs: List<Int>, destination: Int) =
+    crabs.fold(0) { fuel, crab ->
+        fuel + abs(crab - destination)
+    }
+
+fun rampingFuelUsage(crabs: List<Int>, destination: Int) =
+    crabs.fold(0) { fuel, crab ->
+        val distance = abs(crab - destination)
+        val delta = (1..distance).sum()
+        fuel + delta
+    }
