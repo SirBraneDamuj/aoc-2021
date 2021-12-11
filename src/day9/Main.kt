@@ -29,7 +29,7 @@ class Grid(
 data class Point(
     val x: Int,
     val y: Int,
-    val depth: Int,
+    var depth: Int,
 ) {
     val position: Pair<Int, Int> = (x to y)
 
@@ -43,12 +43,14 @@ data class Point(
                 listOf(
                     x.inc() to y,
                     x to y.inc(),
+                    x.inc() to y.inc(),
                 )
             }
             topLine && rightMost -> {
                 listOf(
                     x.dec() to y,
                     x to y.inc(),
+                    x.dec() to y.inc(),
                 )
             }
             topLine -> {
@@ -56,18 +58,22 @@ data class Point(
                     x.dec() to y,
                     x.inc() to y,
                     x to y.inc(),
+                    x.dec() to y.inc(),
+                    x.inc() to y.inc(),
                 )
             }
             bottomLine && leftMost -> {
                 listOf(
                     x.inc() to y,
                     x to y.dec(),
+                    x.inc() to y.dec(),
                 )
             }
             bottomLine && rightMost -> {
                 listOf(
                     x.dec() to y,
                     x to y.dec(),
+                    x.dec() to y.dec(),
                 )
             }
             bottomLine -> {
@@ -75,6 +81,8 @@ data class Point(
                     x.dec() to y,
                     x.inc() to y,
                     x to y.dec(),
+                    x.dec() to y.dec(),
+                    x.inc() to y.dec(),
                 )
             }
             leftMost -> {
@@ -82,6 +90,8 @@ data class Point(
                     x.inc() to y,
                     x to y.dec(),
                     x to y.inc(),
+                    x.inc() to y.dec(),
+                    x.inc() to y.inc(),
                 )
             }
             rightMost -> {
@@ -89,6 +99,8 @@ data class Point(
                     x.dec() to y,
                     x to y.dec(),
                     x to y.inc(),
+                    x.dec() to y.dec(),
+                    x.dec() to y.inc(),
                 )
             }
             else -> {
@@ -97,6 +109,10 @@ data class Point(
                     x.inc() to y,
                     x to y.dec(),
                     x to y.inc(),
+                    x.dec() to y.dec(),
+                    x.dec() to y.inc(),
+                    x.inc() to y.dec(),
+                    x.inc() to y.inc(),
                 )
             }
         }
