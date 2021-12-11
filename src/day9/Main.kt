@@ -1,134 +1,10 @@
 package com.zpthacker.aoc21.day9
 
+import com.zpthacker.aoc21.Grid
 import com.zpthacker.aoc21.getInput
-
-class Grid(
-    val height: Int,
-    val width: Int,
-) {
-    private val _grid: MutableMap<Pair<Int, Int>, Point> = mutableMapOf()
-
-    val allPoints: List<Point>
-        get() = _grid.values.toList()
-
-    fun getPoint(position: Pair<Int, Int>) =
-        _grid[position].let {
-            if (it == null) {
-                println("oh dear")
-                throw RuntimeException()
-            } else {
-                it
-            }
-        }
-
-    fun addPoint(point: Point) {
-        _grid[point.position] = point
-    }
-}
-
-data class Point(
-    val x: Int,
-    val y: Int,
-    var depth: Int,
-) {
-    val position: Pair<Int, Int> = (x to y)
-
-    fun neighbors(grid: Grid): List<Point> {
-        val topLine = y == 0
-        val bottomLine = y == grid.height - 1
-        val leftMost = x == 0
-        val rightMost = x == grid.width - 1
-        val neighborPositions = when {
-            topLine && leftMost -> {
-                listOf(
-                    x.inc() to y,
-                    x to y.inc(),
-                    x.inc() to y.inc(),
-                )
-            }
-            topLine && rightMost -> {
-                listOf(
-                    x.dec() to y,
-                    x to y.inc(),
-                    x.dec() to y.inc(),
-                )
-            }
-            topLine -> {
-                listOf(
-                    x.dec() to y,
-                    x.inc() to y,
-                    x to y.inc(),
-                    x.dec() to y.inc(),
-                    x.inc() to y.inc(),
-                )
-            }
-            bottomLine && leftMost -> {
-                listOf(
-                    x.inc() to y,
-                    x to y.dec(),
-                    x.inc() to y.dec(),
-                )
-            }
-            bottomLine && rightMost -> {
-                listOf(
-                    x.dec() to y,
-                    x to y.dec(),
-                    x.dec() to y.dec(),
-                )
-            }
-            bottomLine -> {
-                listOf(
-                    x.dec() to y,
-                    x.inc() to y,
-                    x to y.dec(),
-                    x.dec() to y.dec(),
-                    x.inc() to y.dec(),
-                )
-            }
-            leftMost -> {
-                listOf(
-                    x.inc() to y,
-                    x to y.dec(),
-                    x to y.inc(),
-                    x.inc() to y.dec(),
-                    x.inc() to y.inc(),
-                )
-            }
-            rightMost -> {
-                listOf(
-                    x.dec() to y,
-                    x to y.dec(),
-                    x to y.inc(),
-                    x.dec() to y.dec(),
-                    x.dec() to y.inc(),
-                )
-            }
-            else -> {
-                listOf(
-                    x.dec() to y,
-                    x.inc() to y,
-                    x to y.dec(),
-                    x to y.inc(),
-                    x.dec() to y.dec(),
-                    x.dec() to y.inc(),
-                    x.inc() to y.dec(),
-                    x.inc() to y.inc(),
-                )
-            }
-        }
-        return neighborPositions.map(grid::getPoint)
-    }
-}
 
 fun main() {
     val input = getInput(9)
-//    val input = """
-//        2199943210
-//        3987894921
-//        9856789892
-//        8767896789
-//        9899965678
-//    """.trimIndent()
     println(input)
     val lines = input.split("\n")
     val grid = Grid(
@@ -139,8 +15,8 @@ fun main() {
         line.forEachIndexed { x, ch ->
             val depth = ch.digitToInt()
             grid.addPoint(
-                Point(
-                    depth = depth,
+                grid.Point(
+                    value = depth,
                     x = x,
                     y = y,
                 )
@@ -149,22 +25,22 @@ fun main() {
     }
 
     val lowPoints = grid.allPoints.filter { point ->
-        point.neighbors(grid).all { neighbor ->
-            neighbor.depth > point.depth
+        point.cardinalNeighbors.all { neighbor ->
+            neighbor.value > point.value
         }
     }
-    val part1 = lowPoints.sumOf { it.depth + 1 }
+    val part1 = lowPoints.sumOf { it.value + 1 }
     println(part1)
     val basins = lowPoints.map { lowPoint ->
         val visited = mutableSetOf<Pair<Int, Int>>()
-        val toVisit = ArrayDeque<Point>()
+        val toVisit = ArrayDeque<Grid.Point>()
         toVisit.add(lowPoint)
         do {
             val current = toVisit.removeFirst()
-            if (current.depth == 9) continue
+            if (current.value == 9) continue
             visited.add(current.position)
-            for (newNeighbor in current.neighbors(grid)) {
-                if (newNeighbor.depth > current.depth && newNeighbor.depth != 9 && newNeighbor.position !in visited) {
+            for (newNeighbor in current.cardinalNeighbors) {
+                if (newNeighbor.value > current.value && newNeighbor.value != 9 && newNeighbor.position !in visited) {
                     toVisit.add(newNeighbor)
                 }
             }
