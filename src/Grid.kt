@@ -42,6 +42,11 @@ class Grid(
         val y: Int,
         var value: Int,
     ) {
+        override fun equals(other: Any?): Boolean {
+            if (other == null) return false
+            if (other !is Point) return false
+            return x == other.x && y == other.y && value == other.value
+        }
         val position: GridPosition = (x to y)
         private val topLine = y == 0
         private val bottomLine = y == height - 1
