@@ -52,3 +52,19 @@ fun List<Int>.binaryToDecimal() =
     this.reversed().foldIndexed(0) { i, acc, digit ->
         acc + (digit * 2.0.pow(i.toDouble()).toInt())
     }
+
+fun String.binaryToDecimal() =
+    this.reversed().foldIndexed(0) { i, acc, digit ->
+        acc + (digit.digitToInt() * 2.0.pow(i.toDouble()).toInt())
+    }
+
+fun String.binaryToDecimalLong() =
+    this.reversed().foldIndexed(0L) { i, acc, digit ->
+        acc + (digit.digitToInt() * 2.0.pow(i.toDouble()).toLong())
+    }
+
+fun String.takeAndRest(numChars: Int) =
+    this.take(numChars) to this.drop(numChars)
+
+
+
