@@ -52,3 +52,10 @@ fun List<Int>.binaryToDecimal() =
     this.reversed().foldIndexed(0) { i, acc, digit ->
         acc + (digit * 2.0.pow(i.toDouble()).toInt())
     }
+
+fun String.binaryToDecimal() =
+    this.reversed().foldIndexed(0) { i, acc, digit ->
+        acc + (digit.digitToInt() * 2.0.pow(i.toDouble()).toInt())
+    }
+
+
