@@ -5,8 +5,15 @@ typealias GridPosition = Pair<Int, Int>
 class Grid(
     val height: Int,
     val width: Int,
+    val defaultValue: Int = 0
 ) {
-    private val _grid: MutableMap<GridPosition, Point> = mutableMapOf()
+    private val _grid: MutableMap<GridPosition, Point> = mutableMapOf<GridPosition, Point>().also {
+        for (x in (0 until width)) {
+            for (y in (0 until height)) {
+                it[x to y] = Point(x, y, defaultValue)
+            }
+        }
+    }
 
     val allPoints: List<Point>
         get() = _grid.values.toList()
@@ -14,8 +21,8 @@ class Grid(
     fun getPoint(position: GridPosition) =
         _grid[position].let {
             if (it == null) {
-                println("oh dear")
-                throw RuntimeException()
+                this.addPoint(Point(position.first, position.second, defaultValue))
+                _grid[position]!!
             } else {
                 it
             }
@@ -28,6 +35,10 @@ class Grid(
         _grid[point.position] = point
     }
 
+    fun addPoint(x: Int, y: Int, value: Int) {
+        _grid[x to y] = Point(x, y, value)
+    }
+
     fun dump() {
         (0 until height).forEach { y ->
             (0 until width).forEach { x ->
@@ -35,6 +46,9 @@ class Grid(
             }
             println()
         }
+        println("                         ")
+        println("-------------------------")
+        println("                         ")
     }
 
     inner class Point(
