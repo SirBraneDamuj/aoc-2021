@@ -1,88 +1,92 @@
 package com.zpthacker.aoc21.day22
 
-import com.zpthacker.aoc21.day19.Vector3
 import com.zpthacker.aoc21.getInput
 
 fun main() {
-    var input = """
-        on x=-20..26,y=-36..17,z=-47..7
-        on x=-20..33,y=-21..23,z=-26..28
-        on x=-22..28,y=-29..23,z=-38..16
-        on x=-46..7,y=-6..46,z=-50..-1
-        on x=-49..1,y=-3..46,z=-24..28
-        on x=2..47,y=-22..22,z=-23..27
-        on x=-27..23,y=-28..26,z=-21..29
-        on x=-39..5,y=-6..47,z=-3..44
-        on x=-30..21,y=-8..43,z=-13..34
-        on x=-22..26,y=-27..20,z=-29..19
-        off x=-48..-32,y=26..41,z=-47..-37
-        on x=-12..35,y=6..50,z=-50..-2
-        off x=-48..-32,y=-32..-16,z=-15..-5
-        on x=-18..26,y=-33..15,z=-7..46
-        off x=-40..-22,y=-38..-28,z=23..41
-        on x=-16..35,y=-41..10,z=-47..6
-        off x=-32..-23,y=11..30,z=-14..3
-        on x=-49..-5,y=-3..45,z=-29..18
-        off x=18..30,y=-20..-8,z=-3..13
-        on x=-41..9,y=-7..43,z=-33..15
-        on x=-54112..-39298,y=-85059..-49293,z=-27449..7877
-        on x=967..23432,y=45373..81175,z=27513..53682
-    """.trimIndent()
-    input = getInput(22)
+    val input = getInput(22)
 
-    val instructions = input
+    var on = listOf<Box>()
+    input
         .trim()
         .split("\n")
-        .map {
-            val (state, coordinates) = it.split(" ")
+        .forEach { line ->
+            val (state, coordinates) = line.split(" ")
             val (xRange, yRange, zRange) = coordinates
                 .split(",")
                 .map { range ->
                     val (_, extents) = range.split("=")
                     val (lower, upper) = extents.split("..").map(String::toInt)
-                    lower..upper
+                    lower to upper
                 }
-            Instruction(
-                state = if (state == "on") 1 else 0,
-                xRange = xRange,
-                yRange = yRange,
-                zRange = zRange,
+            val current = Box(
+                x1 = xRange.first,
+                x2 = xRange.second + 1,
+                y1 = yRange.first,
+                y2 = yRange.second + 1,
+                z1 = zRange.first,
+                z2 = zRange.second + 1,
             )
+            on = on.flatMap { it.splitWith(current) } + if (state == "on") listOf(current) else listOf()
         }
-    val cubes = mutableMapOf<Vector3, Cube>()
-    (-50..50).forEach { x ->
-        (-50..50).forEach { y ->
-            (-50..50).forEach { z ->
-                val pos = Vector3(x, y, z)
-                cubes[Vector3(x, y, z)] = Cube(pos, 0)
-            }
-        }
-    }
-    val maxRange = (-50..50)
-    instructions.forEach { (state, xRange, yRange, zRange) ->
-        for (x in xRange) {
-            if (x !in maxRange) continue
-            for (y in yRange) {
-                if (y !in maxRange) continue
-                for (z in zRange) {
-                    if (z !in maxRange) continue
-                    val pos = Vector3(x, y, z)
-                    cubes[pos]!!.state = state
-                }
-            }
-        }
-    }
-    println(cubes.values.count { it.state == 1})
+    val count = on.sumOf { it.count }
+    println(count)
 }
 
-data class Cube(
-    val position: Vector3,
-    var state: Int,
-)
+data class Box(
+    val x1: Int,
+    val x2: Int,
+    val y1: Int,
+    val y2: Int,
+    val z1: Int,
+    val z2: Int,
+) {
+    fun contains(other: Box) =
+        x1 <= other.x1 &&
+            x2 >= other.x2 &&
+            y1 <= other.y1 &&
+            y2 >= other.y2 &&
+            z1 <= other.z1 &&
+            z2 >= other.z2
 
-data class Instruction(
-    val state: Int,
-    val xRange: IntRange,
-    val yRange: IntRange,
-    val zRange: IntRange,
-)
+    fun intersects(other: Box) =
+        x1 <= other.x2 &&
+            x2 >= other.x1 &&
+            y1 <= other.y2 &&
+            y2 >= other.y1 &&
+            z1 <= other.z2 &&
+            z2 >= other.z1
+
+    fun splitWith(other: Box): List<Box> {
+        if (other.contains(this)) return listOf()
+        if (!intersects(other)) return listOf(this)
+
+        val xSplits = listOf(other.x1, other.x2).filter { this.x1 < it && it < this.x2 }
+        val ySplits = listOf(other.y1, other.y2).filter { this.y1 < it && it < this.y2 }
+        val zSplits = listOf(other.z1, other.z2).filter { this.z1 < it && it < this.z2 }
+
+        val xBounds = listOf(x1) + xSplits + listOf(x2)
+        val yBounds = listOf(y1) + ySplits + listOf(y2)
+        val zBounds = listOf(z1) + zSplits + listOf(z2)
+
+        val sections = mutableListOf<Box>()
+        for (i in (0 until xBounds.count() - 1)) {
+            for (j in (0 until yBounds.count() - 1)) {
+                for (k in (0 until zBounds.count() - 1)) {
+                    sections.add(
+                        Box(
+                            x1 = xBounds[i],
+                            x2 = xBounds[i + 1],
+                            y1 = yBounds[j],
+                            y2 = yBounds[j + 1],
+                            z1 = zBounds[k],
+                            z2 = zBounds[k + 1],
+                        )
+                    )
+                }
+            }
+        }
+        return sections.filter { !other.contains(it) }
+    }
+
+    val count = (x2 - x1).toLong() * (y2 - y1).toLong() * (z2 - z1).toLong()
+}
