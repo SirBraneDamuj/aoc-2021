@@ -3,146 +3,159 @@ package com.zpthacker.aoc21.day23
 import com.zpthacker.aoc21.getInput
 import java.util.*
 
-private val hallwaySpaces = mutableListOf<Space>()
-private val eligibleHallwaySpaces = mutableListOf<Space>()
-private val sideRooms = mutableListOf<SideRoom>()
-
-private var id = ""
-
 fun main() {
-    var input = """
-        #############
-        #...........#
-        ###B#C#B#D###
-          #D#C#B#A#
-          #D#B#A#C#
-          #A#D#C#A#
-          #########
-    """.trimIndent()
-    input = getInput(23)
+    val input = getInput(23)
     val lines = input.trim().split("\n")
-    repeat(11) {
-        val newSpace = Space(SpaceType.HALLWAY)
-        hallwaySpaces.add(newSpace)
-        if (it != 0) {
-            hallwaySpaces[it - 1].neighbors.add(newSpace)
-            newSpace.neighbors.add(hallwaySpaces[it - 1])
+    val lines2 = lines.take(3) +
+        listOf(
+            "  #D#C#B#A#",
+            "  #D#B#A#C#",
+        ) +
+        lines.takeLast(2)
+    val initialEvaluator = AmphipodEvaluator(lines, 2)
+    println("Part 1:")
+    println(initialEvaluator.dump())
+    val part1StartTime = System.currentTimeMillis()
+    val (_, part1Score) = initialEvaluator.findLowestEnergy()
+    val part1EndTime = System.currentTimeMillis()
+    println("Minimum energy: $part1Score")
+    println("Duration: ${(part1EndTime - part1StartTime) / 1000.0} seconds")
+    println("\n------------------\n")
+    println("Part 2:")
+    val secondEvaluator = AmphipodEvaluator(lines2, 4)
+    println(secondEvaluator.dump())
+    val part2StartTime = System.currentTimeMillis()
+    val (_, part2Score) = secondEvaluator.findLowestEnergy()
+    val part2EndTime = System.currentTimeMillis()
+    println("Minimum energy: $part2Score")
+    println("Duration: ${(part2EndTime - part2StartTime) / 1000.0} seconds")
+}
+
+class AmphipodEvaluator(
+    private val lines: List<String>,
+    private val sideRoomDepth: Int,
+) {
+    private val hallwaySpaces = mutableListOf<Space>()
+    private val eligibleHallwaySpaces = mutableListOf<Space>()
+    private val sideRooms = mutableListOf<SideRoom>()
+    private val initialLocations = mutableMapOf<Amphipod, Space>()
+    private val initialOccupants = mutableMapOf<Space, Amphipod>()
+
+    init {
+        repeat(11) {
+            val newSpace = Space(SpaceType.HALLWAY)
+            hallwaySpaces.add(newSpace)
+            if (it != 0) {
+                hallwaySpaces[it - 1].neighbors.add(newSpace)
+                newSpace.neighbors.add(hallwaySpaces[it - 1])
+            }
         }
-    }
-    val locations = mutableMapOf<Amphipod, Space>()
-    val occupants = mutableMapOf<Space, Amphipod>()
-    repeat(4) {
-        val connectedHallwaySpace = hallwaySpaces[(it * 2) + 2]
-        val firstAmphipodTypeChar = lines[2][(it * 2) + 3]
-        val firstAmphipodType = typeForChar(firstAmphipodTypeChar)
-        val secondAmphipodTypeChar = lines[3][(it * 2) + 3]
-        val secondAmphipodType = typeForChar(secondAmphipodTypeChar)
-        val thirdAmphipodTypeChar = lines[4][(it * 2) + 3]
-        val thirdAmphipodType = typeForChar(thirdAmphipodTypeChar)
-        val fourthAmphipodTypeChar = lines[5][(it * 2) + 3]
-        val fourthAmphipodType = typeForChar(fourthAmphipodTypeChar)
-        val firstSpace = Space(SpaceType.SIDE_ROOM)
-        val firstAmphipod = Amphipod(firstAmphipodType)
-        locations[firstAmphipod] = firstSpace
-        occupants[firstSpace] = firstAmphipod
-        firstSpace.neighbors.add(connectedHallwaySpace)
-        connectedHallwaySpace.neighbors.add(firstSpace)
-        val secondSpace = Space(SpaceType.SIDE_ROOM)
-        val secondAmphipod = Amphipod(secondAmphipodType)
-        if (it == 3) {
-            id = secondAmphipod.id
-        }
-        locations[secondAmphipod] = secondSpace
-        occupants[secondSpace] = secondAmphipod
-        secondSpace.neighbors.add(firstSpace)
-        firstSpace.neighbors.add(secondSpace)
-        val thirdSpace = Space(SpaceType.SIDE_ROOM)
-        val thirdAmphipod = Amphipod(thirdAmphipodType)
-        locations[thirdAmphipod] = thirdSpace
-        occupants[thirdSpace] = thirdAmphipod
-        thirdSpace.neighbors.add(secondSpace)
-        secondSpace.neighbors.add(thirdSpace)
-        val fourthSpace = Space(SpaceType.SIDE_ROOM)
-        val fourthAmphipod = Amphipod(fourthAmphipodType)
-        locations[fourthAmphipod] = fourthSpace
-        occupants[fourthSpace] = fourthAmphipod
-        fourthSpace.neighbors.add(thirdSpace)
-        thirdSpace.neighbors.add(fourthSpace)
-        sideRooms.add(
-            SideRoom(
-                firstSpace = firstSpace,
-                secondSpace = secondSpace,
-                thirdSpace = thirdSpace,
-                fourthSpace = fourthSpace,
-                targetType = typeForChar(('A'..'D').elementAt(it))
+        repeat(4) { sideRoomNumber ->
+            val connectedHallwaySpace = hallwaySpaces[(sideRoomNumber * 2) + 2]
+            val spaces = listOf(2, 3, 4, 5)
+                .take(sideRoomDepth)
+                .map { typeForChar(lines[it][(sideRoomNumber * 2) + 3]) }
+                .map { Amphipod(it) }
+                .foldIndexed(mutableListOf<Space>()) { i, spaces, amphipod ->
+                    val space = Space(SpaceType.SIDE_ROOM)
+                    initialLocations[amphipod] = space
+                    initialOccupants[space] = amphipod
+                    if (i == 0) {
+                        space.neighbors.add(connectedHallwaySpace)
+                        connectedHallwaySpace.neighbors.add(space)
+                    } else {
+                        space.neighbors.add(spaces[i - 1])
+                        spaces[i - 1].neighbors.add(space)
+                    }
+                    spaces.also { it.add(space) }
+                }
+            sideRooms.add(
+                SideRoom(
+                    spaces = spaces,
+                    targetType = typeForChar(('A'..'D').elementAt(sideRoomNumber))
+                )
             )
+        }
+        eligibleHallwaySpaces.addAll(
+            hallwaySpaces.filter { space ->
+                space.neighbors.all { neighbor -> neighbor.type != SpaceType.SIDE_ROOM }
+            }
         )
     }
-    println(dump(occupants))
-    eligibleHallwaySpaces.addAll(hallwaySpaces.filter { space -> space.neighbors.all { neighbor -> neighbor.type != SpaceType.SIDE_ROOM } })
-    val (steps, score) = findShortestPath(locations, occupants, 0, listOf())
-    steps.forEach {
-        println(it)
-        println("------")
-    }
-    println(score)
 
-    println("foo")
+    fun findLowestEnergy() = findShortestPath(initialLocations, initialOccupants, 0, listOf())
+
+    fun findShortestPath(
+        locations: Map<Amphipod, Space>,
+        occupants: Map<Space, Amphipod>,
+        energy: Int,
+        steps: List<String>
+    ): Pair<List<String>, Int?> {
+        val dump = dump(occupants)
+        val newSteps = steps + dump
+        val tree = Tree(locations, energy)
+        if (tree in trees) return newSteps to trees[tree]
+        if (occupants.values.all { it.currentState(locations, occupants, sideRooms) == AmphipodState.FINISHED }) {
+            return newSteps to energy
+        } else {
+            val eligibleMoves = occupants
+                .values
+                .flatMap { amph ->
+                    amph.eligibleMoves(locations, occupants, sideRooms, eligibleHallwaySpaces).map { amph to it }
+                }
+            if (eligibleMoves.isEmpty()) {
+                return newSteps to null
+            }
+            val minScore = eligibleMoves
+                .map { (amph, spaceToEnergy) ->
+                    val (destination, requiredEnergy) = spaceToEnergy
+                    val origin = locations[amph]!!
+                    val newLocations = (locations - amph) + (amph to destination)
+                    val newOccupants = (occupants - origin) + (destination to amph)
+                    findShortestPath(
+                        newLocations,
+                        newOccupants,
+                        energy + requiredEnergy,
+                        newSteps,
+                    )
+                }
+                .filter { (_, s) -> s != null }
+                .takeUnless { it.isEmpty() }
+                ?.minByOrNull { (_, s) -> s!! }
+                ?: (listOf<String>() to null)
+            return minScore.also { (_, score) -> trees[tree] = score }
+        }
+    }
+
+    private val trees = mutableMapOf<Tree, Int?>()
+
+    fun dump(occupants: Map<Space, Amphipod> = initialOccupants): String {
+        var s = ("#############\n")
+        val hallway = hallwaySpaces
+            .map {
+                val occupant = occupants[it]
+                occupant?.type?.name?.first() ?: "."
+            }
+            .joinToString("")
+        s += "#$hallway#\n"
+        for (i in (0 until sideRoomDepth)) {
+            val (a, b, c, d) = sideRooms
+                .map { it.spaces[i] }
+                .map {
+                    val occupant = occupants[it]
+                    occupant?.type?.name?.first() ?: "."
+                }
+            s += "###$a#$b#$c#$d###\n"
+        }
+        s += "  #########\n"
+        return s
+    }
 }
 
 data class Tree(
     val locations: Map<Amphipod, Space>,
     val energy: Int,
 )
-
-private val trees = mutableMapOf<Tree, Int?>()
-
-fun findShortestPath(
-    locations: Map<Amphipod, Space>,
-    occupants: Map<Space, Amphipod>,
-    energy: Int,
-    steps: List<String>
-): Pair<List<String>, Int?> {
-    val dump = dump(occupants)
-    val newSteps = steps + dump
-    val tree = Tree(locations, energy)
-    if (tree in trees) return newSteps to trees[tree]
-    if (occupants.values.all { it.currentState(locations, occupants) == AmphipodState.FINISHED }) {
-        return newSteps to energy
-    } else {
-        val eligibleMoves = occupants
-            .values
-            .flatMap { amph ->
-                amph.eligibleMoves(locations, occupants).map { amph to it }
-            }
-        if (eligibleMoves.isEmpty()) {
-            return newSteps to null
-        }
-        val allScores = eligibleMoves
-            .map { (amph, spaceToEnergy) ->
-                val (destination, requiredEnergy) = spaceToEnergy
-                val origin = locations[amph]!!
-                val newLocations = (locations - amph) + (amph to destination)
-                val newOccupants = (occupants - origin) + (destination to amph)
-                findShortestPath(
-                    newLocations,
-                    newOccupants,
-                    energy + requiredEnergy,
-                    newSteps,
-                )
-            }
-            .filter { (_, s) -> s != null }
-            .takeUnless { it.isEmpty() }
-        when (steps.count()) {
-            1 -> println("Finished a top level move")
-        }
-        val minScore = allScores
-            ?.minByOrNull { (_, s) -> s!! }
-            ?: (listOf<String>() to null)
-        trees[tree] = minScore.second
-        return minScore
-    }
-}
 
 enum class AmphipodType(val energyRequirement: Int) {
     AMBER(1),
@@ -170,14 +183,18 @@ data class Amphipod(
     val type: AmphipodType,
     val id: String = UUID.randomUUID().toString()
 ) {
-    fun currentState(locations: Map<Amphipod, Space>, occupants: Map<Space, Amphipod>): AmphipodState {
+    fun currentState(
+        locations: Map<Amphipod, Space>,
+        occupants: Map<Space, Amphipod>,
+        sideRooms: List<SideRoom>,
+    ): AmphipodState {
         val location = locations[this]!!
         return when (location.type) {
             SpaceType.SIDE_ROOM -> {
                 val sideRoom = sideRooms.single { it.containsSpace(location) }
                 if (sideRoom.targetType != this.type) return AmphipodState.NEED_TO_LEAVE
-                val occupants = sideRoom.spaces.mapNotNull { occupants[it] }
-                return if (occupants.any { it.type != sideRoom.targetType }) {
+                val sideRoomOccupants = sideRoom.spaces.mapNotNull { occupants[it] }
+                return if (sideRoomOccupants.any { it.type != sideRoom.targetType }) {
                     AmphipodState.NEED_TO_LEAVE
                 } else {
                     AmphipodState.FINISHED
@@ -187,10 +204,15 @@ data class Amphipod(
         }
     }
 
-    fun eligibleMoves(locations: Map<Amphipod, Space>, occupants: Map<Space, Amphipod>): Map<Space, Int> {
+    fun eligibleMoves(
+        locations: Map<Amphipod, Space>,
+        occupants: Map<Space, Amphipod>,
+        sideRooms: List<SideRoom>,
+        eligibleHallwaySpaces: List<Space>,
+    ): Map<Space, Int> {
         val targetSideRoom = sideRooms.single { it.targetType == this.type }
         val location = locations[this]!!
-        val eligibleSpaces: List<Space> = when (currentState(locations, occupants)) {
+        val eligibleSpaces: List<Space> = when (currentState(locations, occupants, sideRooms)) {
             AmphipodState.FINISHED -> listOf()
             AmphipodState.HALLWAY -> {
                 val targetOccupants = targetSideRoom.spaces.mapNotNull { occupants[it] }
@@ -282,10 +304,7 @@ data class Space(
 }
 
 data class SideRoom(
-    val firstSpace: Space,
-    val secondSpace: Space,
-    val thirdSpace: Space,
-    val fourthSpace: Space,
+    val spaces: List<Space>,
     val targetType: AmphipodType,
 ) {
     fun containsSpace(space: Space) = space in spaces
@@ -295,47 +314,4 @@ data class SideRoom(
 
     fun lastUnoccupied(occupants: Map<Space, Amphipod>) =
         this.spaces.lastOrNull { occupants[it] == null }
-
-    val spaces = listOf(firstSpace, secondSpace, thirdSpace, fourthSpace)
-}
-
-fun dump(occupants: Map<Space, Amphipod>): String {
-    var s = ("#############\n")
-    val hallway = hallwaySpaces
-        .map {
-            val occupant = occupants[it]
-            occupant?.type?.name?.first() ?: "."
-        }
-        .joinToString("")
-    s += "#$hallway#\n"
-    val (a, b, c, d) = sideRooms
-        .map(SideRoom::firstSpace)
-        .map {
-            val occupant = occupants[it]
-            occupant?.type?.name?.first() ?: "."
-        }
-    s += "###$a#$b#$c#$d###\n"
-    val (w, x, y, z) = sideRooms
-        .map(SideRoom::secondSpace)
-        .map {
-            val occupant = occupants[it]
-            occupant?.type?.name?.first() ?: "."
-        }
-    s += "  #$w#$x#$y#$z#\n"
-    val (e, f, g, h) = sideRooms
-        .map(SideRoom::thirdSpace)
-        .map {
-            val occupant = occupants[it]
-            occupant?.type?.name?.first() ?: "."
-        }
-    s += "  #$e#$f#$g#$h#\n"
-    val (m, n, o, p) = sideRooms
-        .map(SideRoom::fourthSpace)
-        .map {
-            val occupant = occupants[it]
-            occupant?.type?.name?.first() ?: "."
-        }
-    s += "  #$m#$n#$o#$p#\n"
-    s += "  #########\n"
-    return s
 }
