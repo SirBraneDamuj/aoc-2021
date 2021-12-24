@@ -66,5 +66,3 @@ fun String.binaryToDecimalLong() =
 fun String.takeAndRest(numChars: Int) =
     this.take(numChars) to this.drop(numChars)
 
-
-
